@@ -1,9 +1,11 @@
 {
-  "hosting": {
-    "public": "web",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [
-      { "source": "/ask", "function": "ai-caravan-ask" }
-    ]
-  }
+  "hosting": [
+    {
+      "target": "aicaravanagent",
+      "public": "web",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [{ "source": "/ask", "function": "ai-caravan-ask" }]
+    }
+  ]
 }
+
