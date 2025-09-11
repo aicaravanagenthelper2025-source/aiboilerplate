@@ -10,6 +10,14 @@ export function ensurePasscode(req, res, next) {
         return res.status(401).json({ error: "No autorizado (passcode)" });
     next();
 }
+export function checkOrigin(req, res, next) {
+    const allowed = (process.env.ALLOWED_ORIGIN || "").split(",").map(s => s.trim());
+    const origin = String(req.headers.origin || "");
+    if (allowed.length && !allowed.includes(origin)) {
+        return res.status(403).json({ error: "Origen no permitido" });
+    }
+    next();
+}
 export function rateLimit(req, res, next) {
     const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "anon";
     const now = Date.now();

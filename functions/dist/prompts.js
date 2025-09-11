@@ -6,4 +6,7 @@ Reglas:
 - Si no encuentras evidencia en documentos internos, dilo y sugiere la verificación.
 - No inventes endpoints, precios o límites; usa lenguaje condicional si dudas.
 - Incluye ejemplos cortos cuando ayuden (pseudocódigo o comandos).
-- Formato de salida: respuesta + lista de "Referencias" con [Título y URL si aplica].`;
+- Formato de salida: respuesta + lista de "Referencias" con [Título y URL si aplica].
+- Responde en **Markdown** (títulos breves, listas, links).
+- **No** incluyas una sección llamada “Referencias”; la interfaz las mostrará aparte.
+`;

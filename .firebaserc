@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "aicaravanagenthelper2025"
-  }
+  },
+  "targets": {
+    "aicaravanagenthelper2025": {
+      "hosting": {
+        "aicaravanagent": [
+          "aicaravanagent"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

@@ -33,7 +33,7 @@
     }
 
     p {
-      opacity: .9
+      opacity: .9;
     }
 
     textarea {
@@ -66,12 +66,32 @@
     .refs {
       margin-top: 10px;
       font-size: 14px;
-      opacity: .9
+      opacity: .9;
     }
 
     .out {
-      white-space: pre-wrap;
-      line-height: 1.45;
+      margin-top: 16px;
+      line-height: 1.55;
+    }
+
+    /* Ajustes de Markdown */
+    #out ul {
+      list-style: disc;
+      margin-left: 1.25rem;
+    }
+
+    #out ol {
+      list-style: decimal;
+      margin-left: 1.25rem;
+    }
+
+    #out h2,
+    #out h3 {
+      margin: .6rem 0 .3rem;
+    }
+
+    #out p {
+      margin: .5rem 0;
     }
 
     .row {
@@ -92,36 +112,9 @@
     }
 
     small {
-      color: #a3b3d3
+      color: #a3b3d3;
     }
   </style>
-  <!-- Quita los inputs de pass y endpoint del DOM -->
-  <script>
-    const ENDPOINT = "/ask"; // por re-write
-    async function ask() {
-      const q = document.querySelector("#q").value.trim();
-      if (!q) return alert("Escribe una pregunta");
-      document.querySelector("#out").textContent = "Pensando...";
-      try {
-        const resp = await fetch(ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: q })
-        });
-        const json = await resp.json();
-        if (!resp.ok) throw new Error(json.error || "Error");
-        document.querySelector("#out").textContent = json.text || "(sin texto)";
-        const refs = (json.references || []).map(r => r.url ? `<li><a href="${r.url}" target="_blank">${r.title || r.url}</a></li>` : `<li>${r.title || r.source}</li>`).join("");
-        document.querySelector("#refs").innerHTML = refs ? `<strong>Referencias</strong><ul>${refs}</ul>` : "";
-      } catch (e) {
-        document.querySelector("#out").textContent = "Error: " + (e.message || e);
-      }
-    }
-    document.addEventListener("DOMContentLoaded", () => {
-      document.querySelector("#send").addEventListener("click", ask);
-    });
-  </script>
-
 </head>
 
 <body>
@@ -133,42 +126,77 @@
       <button id="send">Preguntar</button>
       <div id="out" class="out"></div>
       <div id="refs" class="refs"></div>
-      <small>Beta educativa • Verifica antes de producción</small>
     </div>
   </div>
+
+  <!-- Librerías para Markdown y sanitizado -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+
+  <!-- Script principal -->
   <script>
-    const $ = sel => document.querySelector(sel);
-    $("#send").addEventListener("click", async () => {
-      const endpoint = $("#endpoint").value.trim();
-      const pass = $("#pass").value.trim();
-      const q = $("#q").value.trim();
-      if (!endpoint) return alert("Configura la URL del endpoint /ask");
-      if (!q) return alert("Escribe una pregunta");
-      $("#send").disabled = true; $("#out").textContent = "Pensando..."; $("#refs").textContent = "";
-      try {
-        const resp = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...(pass ? { "x-passcode": pass } : {}) },
-          body: JSON.stringify({ query: q })
-        });
-        const json = await resp.json();
-        if (!resp.ok) throw new Error(json.error || "Error");
-        $("#out").textContent = json.text || "(sin texto)";
-        if (Array.isArray(json.references) && json.references.length) {
-          const html = json.references.map(r => r.url
-            ? `<li><a href="${r.url}" target="_blank" rel="noopener">${r.title || r.url}</a></li>`
-            : `<li>${r.title || r.source}</li>`).join("");
-          $("#refs").innerHTML = `<div><strong>Referencias</strong><ul>${html}</ul></div>`;
-        } else {
-          $("#refs").textContent = "";
-        }
-      } catch (e) {
-        $("#out").textContent = "Error: " + (e?.message || e);
-      } finally {
-        $("#send").disabled = false;
+    document.addEventListener("DOMContentLoaded", () => {
+      const ENDPOINT = "/ask"; // rewrite de firebase.json
+      const qEl = document.querySelector("#q");
+      const outEl = document.querySelector("#out");
+      const refsEl = document.querySelector("#refs");
+      const btn = document.querySelector("#send");
+
+      function stripReferencesSection(s) {
+        return (s || "").replace(/\n?\s*(\*\*?\s*Referencias?\s*\*\*?:?|\#+\s*Referencias?)\s*[\s\S]*$/i, "");
       }
+
+      function dedupeRefs(refs) {
+        const m = new Map();
+        (refs || []).forEach(r => {
+          const key = (r.url || r.title || "").trim().toLowerCase();
+          if (!key) return;
+          if (!m.has(key)) m.set(key, r);
+        });
+        return [...m.values()];
+      }
+
+      async function ask() {
+        const q = qEl.value.trim();
+        if (!q) return;
+        btn.disabled = true;
+        outEl.textContent = "Pensando…";
+        refsEl.innerHTML = "";
+
+        try {
+          const resp = await fetch(ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: q })
+          });
+
+          const json = await resp.json();
+          if (!resp.ok) throw new Error(json.error || "Error");
+
+          // Render Markdown seguro
+          const cleaned = stripReferencesSection(json.text || "");
+          const html = DOMPurify.sanitize(marked.parse(cleaned));
+          outEl.innerHTML = html;
+
+          // Mostrar referencias únicas
+          const uniq = dedupeRefs(json.references || []);
+          if (uniq.length) {
+            const items = uniq.map(r =>
+              r.url
+                ? `<li><a href="${r.url}" target="_blank" rel="noopener">${r.title || r.url}</a></li>`
+                : `<li>${r.title || "Referencia"}</li>`
+            ).join("");
+            refsEl.innerHTML = `<strong>Referencias</strong><ul>${items}</ul>`;
+          }
+        } catch (e) {
+          outEl.textContent = "Error: " + (e.message || e);
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      btn.addEventListener("click", ask);
     });
   </script>
 </body>
-
 </html>

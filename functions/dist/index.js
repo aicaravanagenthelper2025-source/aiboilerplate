@@ -3,14 +3,14 @@ import cors from "cors";
 import { VertexAI } from "@google-cloud/vertexai";
 import { retrieveHybrid } from "./rag.js";
 import { systemPrompt } from "./prompts.js";
-import { ensurePasscode, rateLimit } from "./security.js";
+import { checkOrigin, rateLimit } from "./security.js";
 const server = express(); // <- usa un nombre distinto a 'app' para evitar colisión
 server.use(express.json({ limit: "1mb" }));
 // CORS
 const allowed = process.env.ALLOWED_ORIGIN || "*";
 server.use(cors({ origin: allowed, credentials: false }));
 server.get("/healthz", (_, res) => res.status(200).send("ok"));
-server.post("/ask", ensurePasscode, rateLimit, async (req, res) => {
+server.post("/ask", checkOrigin, rateLimit, async (req, res) => {
     try {
         const query = (req.body?.query || "").trim();
         if (!query || query.length < 3)
@@ -18,7 +18,7 @@ server.post("/ask", ensurePasscode, rateLimit, async (req, res) => {
         const passages = await retrieveHybrid(query, 3, 3);
         const contextLines = passages.map(p => `- ${p.snippet} [${p.title}${p.url ? " | " + p.url : ""}]`).join("\n");
         const userPrompt = `Pregunta: ${query}\n\nContexto:\n${contextLines}`;
-        const project = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
+        const project = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || "aicaravanagenthelper2025";
         const location = process.env.VERTEX_LOCATION || "us-central1";
         const vertex = new VertexAI({ project, location });
         const model = vertex.getGenerativeModel({ model: process.env.VERTEX_MODEL || "gemini-1.5-flash" });
