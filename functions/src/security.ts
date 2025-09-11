@@ -1,0 +1,37 @@
+import type { Request, Response, NextFunction } from "express";
+
+const WINDOW_MS = 60_000; // 1 min window
+const MAX_REQS = Number(process.env.RATE_LIMIT || 30);
+const BUCKET = new Map<string, { count: number; start: number }>();
+
+export function ensurePasscode(req: Request, res: Response, next: NextFunction) {
+  const expected = process.env.PASSCODE;
+  if (!expected) return next(); // disabled
+  const header = String(req.headers["x-passcode"] || req.query.passcode || req.body?.passcode || "");
+  if (header !== expected) return res.status(401).json({ error: "No autorizado (passcode)" });
+  next();
+}
+
+export function checkOrigin(req: any, res: any, next: any) {
+  const allowed = (process.env.ALLOWED_ORIGIN || "").split(",").map(s => s.trim());
+  const origin = String(req.headers.origin || "");
+  if (allowed.length && !allowed.includes(origin)) {
+    return res.status(403).json({ error: "Origen no permitido" });
+  }
+  next();
+}
+
+
+export function rateLimit(req: Request, res: Response, next: NextFunction) {
+  const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress || "anon";
+  const now = Date.now();
+  const slot = BUCKET.get(ip) || { count: 0, start: now };
+  if (now - slot.start > WINDOW_MS) {
+    slot.count = 0;
+    slot.start = now;
+  }
+  slot.count += 1;
+  BUCKET.set(ip, slot);
+  if (slot.count > MAX_REQS) return res.status(429).json({ error: "Rate limit excedido" });
+  next();
+}

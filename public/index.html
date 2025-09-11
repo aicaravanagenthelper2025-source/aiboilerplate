@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Caravan Guide</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      margin: 0;
+      background: #0b1220;
+      color: #e7ecf3;
+    }
+
+    .wrap {
+      max-width: 860px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, .2);
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      margin: 0 0 10px;
+    }
+
+    p {
+      opacity: .9
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 90px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      background: #0b1220;
+      color: #e7ecf3;
+      padding: 12px;
+      font-size: 15px;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 10px;
+      background: #2563eb;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .refs {
+      margin-top: 10px;
+      font-size: 14px;
+      opacity: .9
+    }
+
+    .out {
+      white-space: pre-wrap;
+      line-height: 1.45;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    input[type="password"],
+    input[type="text"] {
+      flex: 0 0 220px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0b1220;
+      color: #e7ecf3;
+      padding: 0 10px;
+    }
+
+    small {
+      color: #a3b3d3
+    }
+  </style>
+  <!-- Quita los inputs de pass y endpoint del DOM -->
+  <script>
+    const ENDPOINT = "/ask"; // por re-write
+    async function ask() {
+      const q = document.querySelector("#q").value.trim();
+      if (!q) return alert("Escribe una pregunta");
+      document.querySelector("#out").textContent = "Pensando...";
+      try {
+        const resp = await fetch(ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: q })
+        });
+        const json = await resp.json();
+        if (!resp.ok) throw new Error(json.error || "Error");
+        document.querySelector("#out").textContent = json.text || "(sin texto)";
+        const refs = (json.references || []).map(r => r.url ? `<li><a href="${r.url}" target="_blank">${r.title || r.url}</a></li>` : `<li>${r.title || r.source}</li>`).join("");
+        document.querySelector("#refs").innerHTML = refs ? `<strong>Referencias</strong><ul>${refs}</ul>` : "";
+      } catch (e) {
+        document.querySelector("#out").textContent = "Error: " + (e.message || e);
+      }
+    }
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelector("#send").addEventListener("click", ask);
+    });
+  </script>
+
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>AI Caravan Guide</h1>
+      <p>Haz preguntas sobre Vertex AI (agentes, entrenamiento, Search). Respuestas concisas con referencias.</p>
+      <textarea id="q" placeholder="Ej.: ¿Cómo creo un agente con herramientas y memoria en Vertex AI?"></textarea>
+      <button id="send">Preguntar</button>
+      <div id="out" class="out"></div>
+      <div id="refs" class="refs"></div>
+      <small>Beta educativa • Verifica antes de producción</small>
+    </div>
+  </div>
+  <script>
+    const $ = sel => document.querySelector(sel);
+    $("#send").addEventListener("click", async () => {
+      const endpoint = $("#endpoint").value.trim();
+      const pass = $("#pass").value.trim();
+      const q = $("#q").value.trim();
+      if (!endpoint) return alert("Configura la URL del endpoint /ask");
+      if (!q) return alert("Escribe una pregunta");
+      $("#send").disabled = true; $("#out").textContent = "Pensando..."; $("#refs").textContent = "";
+      try {
+        const resp = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(pass ? { "x-passcode": pass } : {}) },
+          body: JSON.stringify({ query: q })
+        });
+        const json = await resp.json();
+        if (!resp.ok) throw new Error(json.error || "Error");
+        $("#out").textContent = json.text || "(sin texto)";
+        if (Array.isArray(json.references) && json.references.length) {
+          const html = json.references.map(r => r.url
+            ? `<li><a href="${r.url}" target="_blank" rel="noopener">${r.title || r.url}</a></li>`
+            : `<li>${r.title || r.source}</li>`).join("");
+          $("#refs").innerHTML = `<div><strong>Referencias</strong><ul>${html}</ul></div>`;
+        } else {
+          $("#refs").textContent = "";
+        }
+      } catch (e) {
+        $("#out").textContent = "Error: " + (e?.message || e);
+      } finally {
+        $("#send").disabled = false;
+      }
+    });
+  </script>
+</body>
+
+</html>
