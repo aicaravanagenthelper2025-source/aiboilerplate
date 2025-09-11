@@ -5,205 +5,150 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AI Caravan Agent</title>
 
-  <!-- Fuente similar a landing/event: -->
+  <!-- Tipografías: sans para texto + serif elegante para títulos -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg1:#050816;       /* fondo base oscuro */
-      --bg2:#0b1220;       /* paneles */
-      --glass:#0f172a80;   /* glass con alfa */
-      --border:#263143;
-      --ink:#e7ecf3;       /* texto principal */
-      --muted:#a3b3d3;     /* texto secundario */
-      --acc:#7c4dff;       /* acento violeta */
-      --acc2:#22c1c3;      /* acento degradé */
-      --cta:#6c5ce7;       /* botón */
-      --ctaHover:#5a4fd6;
-      --ok:#22d3ee;
-      --shadow:0 20px 60px rgba(0,0,0,.35);
+      --ink:#111827;          /* texto principal (gris muy oscuro) */
+      --muted:#6b7280;        /* texto secundario */
+      --bg:#ffffff;           /* fondo blanco */
+      --panel:#ffffff;        /* tarjetas */
+      --border:#e5e7eb;       /* bordes claros */
+      --shadow:0 10px 30px rgba(0,0,0,.06);
+      --red:#e63946;          /* acento rojo */
+      --red-d:#c62c39;        /* rojo hover */
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
     body{
-      margin:0;
-      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      color:var(--ink);
-      background:
-        radial-gradient(1200px 600px at 80% -10%, #5a32ff22 0%, transparent 60%),
-        radial-gradient(800px 400px at -10% 20%, #22d3ee22 0%, transparent 60%),
-        linear-gradient(180deg, var(--bg1) 0%, #060a1a 100%);
-      overflow-x:hidden;
+      margin:0; background:var(--bg); color:var(--ink);
+      font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
     }
 
-    /* Hero */
+    /* Hero estilo landing */
     .hero{
-      position:relative;
-      padding:64px 20px 24px;
-      display:flex; flex-direction:column; align-items:center; text-align:center;
-      gap:18px;
+      max-width:1200px; margin: 40px auto 10px; padding: 0 20px;
+      display:grid; grid-template-columns: 1.1fr .9fr; gap:32px; align-items:center;
     }
-    .badge{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:6px 12px; border:1px solid #ffffff22; border-radius:999px;
-      background:linear-gradient(180deg,#ffffff10,#ffffff05);
-      backdrop-filter: blur(6px);
-      box-shadow: var(--shadow);
-      font-size:12px; color:#dbe2ff;
-    }
-    .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 14px var(--ok)}
-    h1.title{
-      font-size: clamp(26px, 5vw, 44px);
-      line-height:1.1; margin:8px 0 0;
-      font-weight:800; letter-spacing:-0.02em;
+    .brandkick{ color:var(--red); font: 700 14px/1 Inter,system-ui; letter-spacing:.18em; text-transform:uppercase; }
+    .title{
+      margin:10px 0 10px;
+      font-family:"Playfair Display", Georgia, serif;
+      font-weight:700; font-size: clamp(28px, 6vw, 56px);
+      line-height:1.05; letter-spacing:-.01em; color:var(--red);
     }
     .subtitle{
-      color:var(--muted);
-      max-width: 860px; margin: 0 auto;
-      font-size: clamp(14px, 2vw, 18px);
+      margin:0; color:var(--muted); font-size: clamp(14px, 2.3vw, 18px);
+    }
+    .hero-img{
+      width:100%; border-radius:18px; box-shadow:var(--shadow); border:1px solid var(--border);
+      object-fit:cover; aspect-ratio: 16/9; background:#fafafa;
     }
 
-    /* Contenedor principal “glass card” */
-    .wrap{
-      max-width:980px; margin: 22px auto 80px; padding:16px;
-    }
+    /* Contenido principal */
+    .wrap{ max-width: 1000px; margin: 24px auto 64px; padding: 0 20px; }
     .card{
-      background: linear-gradient(180deg, #0b1220b3, #0b122099);
-      border:1px solid var(--border);
-      border-radius: 20px;
-      padding: 22px;
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(10px);
+      background:var(--panel); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow);
+      padding: 20px;
     }
 
     /* Input + botón */
-    .ask{
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px;
-      align-items: start;
-      margin-top: 10px;
-    }
+    .ask{ display:grid; grid-template-columns: 1fr auto; gap:12px; align-items:start; }
     textarea{
-      width:100%; min-height: 110px; resize: vertical;
-      border-radius: 14px;
-      border:1px solid var(--border);
-      background: #0b1220;
-      color: var(--ink);
-      padding: 14px 14px 14px 16px;
-      font-size: 15px; line-height:1.45;
-      outline: none;
-      box-shadow: inset 0 0 0 9999px rgba(255,255,255,.01);
+      width:100%; min-height:110px; resize:vertical;
+      border:1px solid var(--border); border-radius:12px; padding:14px; font-size:15px; color:var(--ink);
+      background:#fff; outline:none;
     }
     button{
-      align-self: stretch;
-      padding: 14px 18px;
-      border:none; border-radius: 14px;
-      background: linear-gradient(135deg, var(--cta), #8a7dff);
-      color:white; font-weight: 700; letter-spacing:.2px;
-      cursor:pointer; transition: all .18s ease;
-      box-shadow: 0 10px 25px rgba(108,92,231,.25);
-      min-width: 140px;
+      align-self:stretch; min-width:140px;
+      border:none; border-radius:12px; padding:14px 18px;
+      background:var(--red); color:#fff; font-weight:700; cursor:pointer; transition:.15s ease;
+      box-shadow: 0 8px 18px rgba(230,57,70,.18);
     }
-    button:hover{ transform: translateY(-1px); background: linear-gradient(135deg, var(--ctaHover), #7c6fff); }
-    button:disabled{ opacity:.6; cursor: not-allowed; transform:none; }
+    button:hover{ background:var(--red-d); transform: translateY(-1px); }
+    button:disabled{ opacity:.6; cursor:not-allowed; transform:none; }
 
-    /* Respuesta */
-    .panel{
-      margin-top: 18px;
-      border:1px solid var(--border);
-      border-radius: 16px;
-      background: #0f1527;
-      padding:18px 16px;
+    /* Panel de respuesta */
+    .panel{ margin-top:16px; border:1px solid var(--border); border-radius:14px; padding:16px; background:#fff; }
+    .avatarRow{ display:flex; gap:10px; align-items:center; margin-bottom:10px; }
+    .badge{
+      display:inline-flex; align-items:center; gap:8px; padding:6px 10px;
+      background:#fff; border:1px solid var(--border); border-radius:999px; box-shadow:var(--shadow); color:#374151; font-size:12px;
     }
-    .avatarRow{ display:flex; gap:10px; align-items:center; margin-bottom:8px;}
-    .avatar{
-      width:28px; height:28px; border-radius: 8px;
-      background: radial-gradient(circle at 30% 20%, #6b8cff, #8f4dff);
-      box-shadow: 0 6px 20px rgba(140,115,255,.35);
-    }
-    .agentName{font-size:13px; color:#b6c3ea; letter-spacing:.3px}
+    .dot{ width:7px; height:7px; border-radius:50%; background:var(--red); box-shadow:0 0 8px rgba(230,57,70,.7); }
 
     .out{ line-height:1.6; font-size:15.5px; }
-    /* Markdown */
-    #out h2{ font-size:20px; margin:.6rem 0 .25rem; }
-    #out h3{ font-size:18px; margin:.6rem 0 .25rem; color:#d9e2ff; }
+    /* Markdown mejora */
+    #out h2{ font-family:"Playfair Display", Georgia, serif; color:var(--red); margin:.6rem 0 .25rem; }
+    #out h3{ color:#1f2937; margin:.6rem 0 .25rem; }
     #out p{ margin:.55rem 0; }
-    #out code{ background:#0b122a; border:1px solid #22304a; padding:.08rem .35rem; border-radius:6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    #out pre{ background:#0b122a; border:1px solid #22304a; padding:12px; border-radius:10px; overflow:auto; }
+    #out code{ background:#f8fafc; border:1px solid var(--border); padding:.08rem .35rem; border-radius:6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    #out pre{ background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:10px; overflow:auto; }
     #out ul{ list-style: disc; margin: .4rem 0 .6rem 1.2rem; }
     #out ol{ list-style: decimal; margin: .4rem 0 .6rem 1.2rem; }
 
-    .refs{ margin-top: 14px; font-size:14px; color:#cdd6f7; }
-    .refs strong{ font-weight:800; letter-spacing:.3px; color:#dfe7ff; }
-    .refs a{ color:#9dc2ff; text-decoration:none; border-bottom:1px dotted #9dc2ff55; }
-    .refs a:hover{ color:#baddff; border-bottom-color:#baddff; }
+    .refs{ margin-top:12px; font-size:14px; color:#374151; }
+    .refs strong{ color:var(--red); }
+    .refs a{ color:#0ea5e9; text-decoration:none; border-bottom:1px dotted #0ea5e955; }
+    .refs a:hover{ color:#0284c7; border-bottom-color:#0284c7; }
 
-    /* Footer */
-    .foot{
-      text-align:center; color:var(--muted); font-size:12px; margin: 36px 0 24px;
-    }
+    .foot{ text-align:center; color:#6b7280; font-size:12px; margin: 36px 0 24px; }
 
-    /* Background decorativo sutil (grid) */
-    .grid {
-      position: fixed; inset: 0; pointer-events: none; opacity:.08;
-      background-image:
-        linear-gradient(#ffffff10 1px, transparent 1px),
-        linear-gradient(90deg, #ffffff10 1px, transparent 1px);
-      background-size: 32px 32px;
-      mask-image: radial-gradient(ellipse at 50% -10%, black 20%, transparent 60%);
-    }
-
-    @media (max-width: 720px){
-      .ask{ grid-template-columns: 1fr; }
-      button{ min-height:48px; }
+    @media (max-width: 920px){
+      .hero { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-  <div class="grid"></div>
+  <!-- HERO -->
+  <section class="hero">
+    <div>
+      <div class="brandkick">AI Caravan • Live</div>
+      <!-- Encabezado en Markdown (se procesa abajo con marked.parseInline) -->
+      <h1 id="hero-title" class="title">Preguntas sobre **Vertex AI**: agentes, Search y entrenamiento</h1>
+      <p class="subtitle">
+        Pregunta libremente: desde “¿cómo armo un agente con herramientas?” hasta “¿cómo conecto GCS a Vertex AI Search?”.
+        Respuestas claras  y referencias verificables.
+      </p>
+    </div>
+    <!-- Imagen opcional del evento (puedes reemplazar la URL) -->
+    <img class="hero-img" alt="AI Caravan" src="https://images.unsplash.com/photo-1529101091764-c3526daf38fe?q=80&w=1400&auto=format&fit=crop">
+  </section>
 
-  <header class="hero">
-    <div class="badge"><span class="dot"></span> AI Caravan • Live Demo</div>
-   <h1 class="title">
-  Tu guía para <strong>Vertex AI</strong>: agentes, Search y entrenamiento
-</h1>
-
-    <p class="subtitle">
-      Pregunta libremente: desde “¿cómo armo un agente con herramientas?” hasta “¿cómo conecto GCS a Vertex AI Search?”.
-      Respuestas claras y referencias verificables.
-    </p>
-  </header>
-
+  <!-- APP -->
   <main class="wrap">
     <section class="card">
       <div class="ask">
         <textarea id="q" placeholder="Ej.: ¿Cómo creo un agente con herramientas y memoria en Vertex AI?"></textarea>
-        <button id="send" aria-label="Preguntar">Preguntar</button>
+        <button id="send">Preguntar</button>
       </div>
 
       <div class="panel">
         <div class="avatarRow">
-          <div class="avatar" aria-hidden="true"></div>
-          <div class="agentName">AI Caravan Agent</div>
+          <div class="badge"><span class="dot"></span> AI Caravan Agent</div>
         </div>
         <div id="out" class="out">Escribe tu pregunta para comenzar…</div>
         <div id="refs" class="refs"></div>
       </div>
     </section>
-    <p class="foot">© AI Caravan 2025 · Demo educativa — impulsada por Vertex AI</p>
+
+    <p class="foot">© AI Caravan 2025 • Demo educativa con Vertex AI</p>
   </main>
 
   <!-- Markdown + sanitizado -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
 
-  <!-- Lógica del agente -->
+  <!-- Lógica -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const ENDPOINT = "/ask"; // rewrite de Firebase Hosting
+      // Render del encabezado en Markdown (inline)
+      const heroTitle = document.getElementById("hero-title");
+      heroTitle.innerHTML = DOMPurify.sanitize(marked.parseInline(heroTitle.textContent));
+
+      const ENDPOINT = "/ask";
       const qEl   = document.querySelector("#q");
       const outEl = document.querySelector("#out");
       const refsEl= document.querySelector("#refs");
@@ -238,7 +183,7 @@
           const json = await resp.json();
           if (!resp.ok) throw new Error(json.error || "Error");
 
-          // Render seguro en Markdown
+          // Render Markdown seguro
           const cleaned = stripReferencesSection(json.text || "");
           const html = DOMPurify.sanitize(marked.parse(cleaned));
           outEl.innerHTML = html;
