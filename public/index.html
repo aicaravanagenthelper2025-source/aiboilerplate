@@ -1,151 +1,162 @@
 <!doctype html>
 <html lang="es">
-
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AI Caravan Guide</title>
+  <title>AI Caravan Agent</title>
+
+  <!-- Tipografías: sans para texto + serif elegante para títulos -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+
   <style>
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      margin: 0;
-      background: #0b1220;
-      color: #e7ecf3;
+    :root{
+      --ink:#111827;          /* texto principal (gris muy oscuro) */
+      --muted:#6b7280;        /* texto secundario */
+      --bg:#ffffff;           /* fondo blanco */
+      --panel:#ffffff;        /* tarjetas */
+      --border:#e5e7eb;       /* bordes claros */
+      --shadow:0 10px 30px rgba(0,0,0,.06);
+      --red:#e63946;          /* acento rojo */
+      --red-d:#c62c39;        /* rojo hover */
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
     }
 
-    .wrap {
-      max-width: 860px;
-      margin: 40px auto;
-      padding: 0 16px;
+    /* Hero estilo landing */
+    .hero{
+      max-width:1200px; margin: 40px auto 10px; padding: 0 20px;
+      display:grid; grid-template-columns: 1.1fr .9fr; gap:32px; align-items:center;
+    }
+    .brandkick{ color:var(--red); font: 700 14px/1 Inter,system-ui; letter-spacing:.18em; text-transform:uppercase; }
+    .title{
+      margin:10px 0 10px;
+      font-family:"Playfair Display", Georgia, serif;
+      font-weight:700; font-size: clamp(28px, 6vw, 56px);
+      line-height:1.05; letter-spacing:-.01em; color:var(--red);
+    }
+    .subtitle{
+      margin:0; color:var(--muted); font-size: clamp(14px, 2.3vw, 18px);
+    }
+    .hero-img{
+      width:100%; border-radius:18px; box-shadow:var(--shadow); border:1px solid var(--border);
+      object-fit:cover; aspect-ratio: 16/9; background:#fafafa;
     }
 
-    .card {
-      background: #0f172a;
-      border: 1px solid #1e293b;
-      border-radius: 16px;
+    /* Contenido principal */
+    .wrap{ max-width: 1000px; margin: 24px auto 64px; padding: 0 20px; }
+    .card{
+      background:var(--panel); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow);
       padding: 20px;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, .2);
     }
 
-    h1 {
-      font-size: 1.6rem;
-      margin: 0 0 10px;
+    /* Input + botón */
+    .ask{ display:grid; grid-template-columns: 1fr auto; gap:12px; align-items:start; }
+    textarea{
+      width:100%; min-height:110px; resize:vertical;
+      border:1px solid var(--border); border-radius:12px; padding:14px; font-size:15px; color:var(--ink);
+      background:#fff; outline:none;
     }
-
-    p {
-      opacity: .9;
+    button{
+      align-self:stretch; min-width:140px;
+      border:none; border-radius:12px; padding:14px 18px;
+      background:var(--red); color:#fff; font-weight:700; cursor:pointer; transition:.15s ease;
+      box-shadow: 0 8px 18px rgba(230,57,70,.18);
     }
+    button:hover{ background:var(--red-d); transform: translateY(-1px); }
+    button:disabled{ opacity:.6; cursor:not-allowed; transform:none; }
 
-    textarea {
-      width: 100%;
-      min-height: 90px;
-      border-radius: 12px;
-      border: 1px solid #334155;
-      background: #0b1220;
-      color: #e7ecf3;
-      padding: 12px;
-      font-size: 15px;
+    /* Panel de respuesta */
+    .panel{ margin-top:16px; border:1px solid var(--border); border-radius:14px; padding:16px; background:#fff; }
+    .avatarRow{ display:flex; gap:10px; align-items:center; margin-bottom:10px; }
+    .badge{
+      display:inline-flex; align-items:center; gap:8px; padding:6px 10px;
+      background:#fff; border:1px solid var(--border); border-radius:999px; box-shadow:var(--shadow); color:#374151; font-size:12px;
     }
+    .dot{ width:7px; height:7px; border-radius:50%; background:var(--red); box-shadow:0 0 8px rgba(230,57,70,.7); }
 
-    button {
-      margin-top: 10px;
-      padding: 10px 14px;
-      border: none;
-      border-radius: 10px;
-      background: #2563eb;
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-    }
+    .out{ line-height:1.6; font-size:15.5px; }
+    /* Markdown mejora */
+    #out h2{ font-family:"Playfair Display", Georgia, serif; color:var(--red); margin:.6rem 0 .25rem; }
+    #out h3{ color:#1f2937; margin:.6rem 0 .25rem; }
+    #out p{ margin:.55rem 0; }
+    #out code{ background:#f8fafc; border:1px solid var(--border); padding:.08rem .35rem; border-radius:6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    #out pre{ background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:10px; overflow:auto; }
+    #out ul{ list-style: disc; margin: .4rem 0 .6rem 1.2rem; }
+    #out ol{ list-style: decimal; margin: .4rem 0 .6rem 1.2rem; }
 
-    button:disabled {
-      opacity: .6;
-      cursor: not-allowed;
-    }
+    .refs{ margin-top:12px; font-size:14px; color:#374151; }
+    .refs strong{ color:var(--red); }
+    .refs a{ color:#0ea5e9; text-decoration:none; border-bottom:1px dotted #0ea5e955; }
+    .refs a:hover{ color:#0284c7; border-bottom-color:#0284c7; }
 
-    .refs {
-      margin-top: 10px;
-      font-size: 14px;
-      opacity: .9;
-    }
+    .foot{ text-align:center; color:#6b7280; font-size:12px; margin: 36px 0 24px; }
 
-    .out {
-      margin-top: 16px;
-      line-height: 1.55;
-    }
-
-    /* Ajustes de Markdown */
-    #out ul {
-      list-style: disc;
-      margin-left: 1.25rem;
-    }
-
-    #out ol {
-      list-style: decimal;
-      margin-left: 1.25rem;
-    }
-
-    #out h2,
-    #out h3 {
-      margin: .6rem 0 .3rem;
-    }
-
-    #out p {
-      margin: .5rem 0;
-    }
-
-    .row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    input[type="password"],
-    input[type="text"] {
-      flex: 0 0 220px;
-      height: 36px;
-      border-radius: 10px;
-      border: 1px solid #334155;
-      background: #0b1220;
-      color: #e7ecf3;
-      padding: 0 10px;
-    }
-
-    small {
-      color: #a3b3d3;
+    @media (max-width: 920px){
+      .hero { grid-template-columns: 1fr; }
     }
   </style>
 </head>
-
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>AI Caravan Guide</h1>
-      <p>Haz preguntas sobre Vertex AI (agentes, entrenamiento, Search). Respuestas concisas con referencias.</p>
-      <textarea id="q" placeholder="Ej.: ¿Cómo creo un agente con herramientas y memoria en Vertex AI?"></textarea>
-      <button id="send">Preguntar</button>
-      <div id="out" class="out"></div>
-      <div id="refs" class="refs"></div>
-    </div>
-  </div>
 
-  <!-- Librerías para Markdown y sanitizado -->
+  <!-- HERO -->
+  <section class="hero">
+    <div>
+      <div class="brandkick">AI Caravan • Live</div>
+      <!-- Encabezado en Markdown (se procesa abajo con marked.parseInline) -->
+      <h1 id="hero-title" class="title">Preguntas sobre **Vertex AI**: agentes, Search y entrenamiento</h1>
+      <p class="subtitle">
+        Pregunta libremente: desde “¿cómo armo un agente con herramientas?” hasta “¿cómo conecto GCS a Vertex AI Search?”.
+        Respuestas claras y referencias verificables.
+      </p>
+    </div>
+    <!-- Imagen opcional del evento (puedes reemplazar la URL) -->
+    <img class="hero-img" alt="AI Caravan" src="https://images.unsplash.com/photo-1529101091764-c3526daf38fe?q=80&w=1400&auto=format&fit=crop">
+  </section>
+
+  <!-- APP -->
+  <main class="wrap">
+    <section class="card">
+      <div class="ask">
+        <textarea id="q" placeholder="Ej.: ¿Cómo creo un agente con herramientas y memoria en Vertex AI?"></textarea>
+        <button id="send">Preguntar</button>
+      </div>
+
+      <div class="panel">
+        <div class="avatarRow">
+          <div class="badge"><span class="dot"></span> AI Caravan Agent</div>
+        </div>
+        <div id="out" class="out">Escribe tu pregunta para comenzar…</div>
+        <div id="refs" class="refs"></div>
+      </div>
+    </section>
+
+    <p class="foot">© AI Caravan 2025 • Demo educativa con Vertex AI</p>
+  </main>
+
+  <!-- Markdown + sanitizado -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
 
-  <!-- Script principal -->
+  <!-- Lógica -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const ENDPOINT = "/ask"; // rewrite de firebase.json
-      const qEl = document.querySelector("#q");
+      // Render del encabezado en Markdown (inline)
+      const heroTitle = document.getElementById("hero-title");
+      heroTitle.innerHTML = DOMPurify.sanitize(marked.parseInline(heroTitle.textContent));
+
+      const ENDPOINT = "/ask";
+      const qEl   = document.querySelector("#q");
       const outEl = document.querySelector("#out");
-      const refsEl = document.querySelector("#refs");
-      const btn = document.querySelector("#send");
+      const refsEl= document.querySelector("#refs");
+      const btn   = document.querySelector("#send");
 
       function stripReferencesSection(s) {
         return (s || "").replace(/\n?\s*(\*\*?\s*Referencias?\s*\*\*?:?|\#+\s*Referencias?)\s*[\s\S]*$/i, "");
       }
-
       function dedupeRefs(refs) {
         const m = new Map();
         (refs || []).forEach(r => {
@@ -169,7 +180,6 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ query: q })
           });
-
           const json = await resp.json();
           if (!resp.ok) throw new Error(json.error || "Error");
 
@@ -178,7 +188,7 @@
           const html = DOMPurify.sanitize(marked.parse(cleaned));
           outEl.innerHTML = html;
 
-          // Mostrar referencias únicas
+          // Referencias únicas
           const uniq = dedupeRefs(json.references || []);
           if (uniq.length) {
             const items = uniq.map(r =>
