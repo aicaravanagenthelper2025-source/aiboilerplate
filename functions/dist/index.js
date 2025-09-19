@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import { VertexAI } from "@google-cloud/vertexai";
 import { retrieveHybrid } from "./rag.js";
-import { systemPrompt } from "./prompts.js";
+import { searchAll } from "./search";
 import { checkOrigin, rateLimit } from "./security.js";
 const server = express(); // <- usa un nombre distinto a 'app' para evitar colisión
 server.use(express.json({ limit: "1mb" }));
@@ -15,6 +15,7 @@ server.post("/ask", checkOrigin, rateLimit, async (req, res) => {
         const query = (req.body?.query || "").trim();
         if (!query || query.length < 3)
             return res.status(400).json({ error: "Pregunta inválida" });
+        const { references, extractiveAnswer } = await searchAll(query);
         const passages = await retrieveHybrid(query, 3, 3);
         const contextLines = passages.map(p => `- ${p.snippet} [${p.title}${p.url ? " | " + p.url : ""}]`).join("\n");
         const userPrompt = `Pregunta: ${query}\n\nContexto:\n${contextLines}`;
@@ -22,11 +23,24 @@ server.post("/ask", checkOrigin, rateLimit, async (req, res) => {
         const location = process.env.VERTEX_LOCATION || "us-central1";
         const vertex = new VertexAI({ project, location });
         const model = vertex.getGenerativeModel({ model: process.env.VERTEX_MODEL || "gemini-1.5-flash" });
+        const system = `Responde en Markdown. No inventes. No incluyas "Referencias" en el texto.`;
+        const user = [
+            `Pregunta: ${query}`,
+            extractiveAnswer ? `Extractive hint: ${extractiveAnswer}` : "",
+            references.length
+                ? `Fuentes:\n${references
+                    .slice(0, 6)
+                    .map((r, i) => `  ${i + 1}. ${r.title}${r.url ? ` — ${r.url}` : ""}`)
+                    .join("\n")}`
+                : "",
+        ]
+            .filter(Boolean)
+            .join("\n");
         const result = await model.generateContent({
-            contents: [{ role: "user", parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+            contents: [{ role: "user", parts: [{ text: `${system}\n\n${user}` }] }],
             generationConfig: { maxOutputTokens: 512, temperature: 0.3 }
         });
-        const text = result.response.candidates?.[0]?.content?.parts?.[0]?.text || "Sin respuesta";
+        const text = result.response?.candidates?.[0]?.content?.parts?.map(p => p.text).join("") || "(sin texto)";
         res.json({
             text,
             references: passages.map(p => ({ title: p.title, url: p.url, source: p.source, score: p.score }))

@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import { VertexAI } from "@google-cloud/vertexai";
 import { retrieveHybrid } from "./rag.js";
+import { searchAll } from "./search.js";
 import { systemPrompt } from "./prompts.js";
 import { checkOrigin, rateLimit } from "./security.js";
 
@@ -20,6 +21,8 @@ server.post("/ask", checkOrigin, rateLimit, async (req: Request, res: Response) 
     const query: string = (req.body?.query || "").trim();
     if (!query || query.length < 3) return res.status(400).json({ error: "Pregunta inválida" });
 
+    const { references, extractiveAnswer } = await searchAll(query);
+
     const passages = await retrieveHybrid(query, 3, 3);
 
     const contextLines = passages.map(p => `- ${p.snippet} [${p.title}${p.url ? " | " + p.url : ""}]`).join("\n");
@@ -32,12 +35,25 @@ server.post("/ask", checkOrigin, rateLimit, async (req: Request, res: Response) 
     const vertex = new VertexAI({ project, location });
     const model = vertex.getGenerativeModel({ model: process.env.VERTEX_MODEL || "gemini-1.5-flash" });
 
+    const system = systemPrompt;
+    const user = [
+      `Pregunta: ${query}`,
+      extractiveAnswer ? `Extractive hint: ${extractiveAnswer}` : "",
+      references.length
+        ? `Fuentes:\n${references
+          .slice(0, 6)
+          .map((r: { title: string; url?: string }, i: number) => `  ${i + 1}. ${r.title}${r.url ? ` — ${r.url}` : ""}`)
+          .join("\n")}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
     const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]}],
+      contents: [{ role: "user", parts: [{ text: `${system}\n\n${user}` }] }],
       generationConfig: { maxOutputTokens: 512, temperature: 0.3 }
     });
 
-    const text = result.response.candidates?.[0]?.content?.parts?.[0]?.text || "Sin respuesta";
+    const text = result.response?.candidates?.[0]?.content?.parts?.map(p => p.text).join("") || "(sin texto)";
 
     res.json({
       text,

@@ -20,8 +20,8 @@ export async function retrieveHybrid(query: string, kInternal=3, kWeb=3): Promis
   const dsWeb = process.env.DATASTORE_WEB;
 
   // TODO: Replace mock with real calls to Vertex AI Search:
-  // const internal = await searchVertexAI({ dataStoreId: dsInternal!, query, k: kInternal });
-  // const web = await searchVertexAI({ dataStoreId: dsWeb!, query, k: kWeb });
+  //const internal = await searchVertexAI({ dataStoreId: dsInternal!, query, k: kInternal });
+  //const web = await searchVertexAI({ dataStoreId: dsWeb!, query, k: kWeb });
 
   const internal = mockSearch("internal", query, kInternal);
   const web = mockSearch("web", query, kWeb);
