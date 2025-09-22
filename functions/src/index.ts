@@ -21,14 +21,45 @@ server.post("/ask", checkOrigin, rateLimit, async (req: Request, res: Response) 
     const query: string = (req.body?.query || "").trim();
     if (!query || query.length < 3) return res.status(400).json({ error: "Pregunta inválida" });
 
-    const { references, extractiveAnswer } = await searchAll(query);
+    // Validación de dominio permitido
+    const allowedDomains = [
+      "vertex ai",
+      "construcción de agentes",
+      "construccion de agentes",
+      "agentes",
+      "agent",
+      "publicis sapient",
+      "publicis sapient latam",
+      "ps latam",
+      "pslatam",
+      "ai caravan 2025",
+      "ai caravan",
+      "aicaravan",
+      "aicaravan2025"
+    ];
+    const qLower = query.toLowerCase();
+    const isAllowed = allowedDomains.some(term => qLower.includes(term));
+    if (!isAllowed) {
+      return res.json({
+        text: "Lo siento, solo puedo responder preguntas sobre Vertex AI, construcción de agentes, Publicis Sapient y Publicis Sapient Latam.",
+        references: []
+      });
+    }
 
-    const passages = await retrieveHybrid(query, 3, 3);
-
-    const contextLines = passages.map(p => `- ${p.snippet} [${p.title}${p.url ? " | " + p.url : ""}]`).join("\n");
-    const userPrompt = `Pregunta: ${query}\n\nContexto:\n${contextLines}`;
-
+    // LOG extra para depuración
+    const dsInternal = process.env.DATASTORE_INTERNAL;
     const project = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || "aicaravanagenthelper2025";
+    console.log(`[DEBUG] DATASTORE_INTERNAL (desde index.ts): ${dsInternal}`);
+    console.log(`[DEBUG] GCLOUD_PROJECT (desde index.ts): ${project}`);
+
+  const { references, extractiveAnswer } = await searchAll(query);
+  // Log de references para depuración
+  console.log('[DEBUG] references para el modelo:', JSON.stringify(references, null, 2));
+
+  const passages = await retrieveHybrid(query, 3, 3);
+
+  const contextLines = passages.map(p => `- ${p.snippet} [${p.title}${p.url ? " | " + p.url : ""}]`).join("\n");
+  const userPrompt = `Pregunta: ${query}\n\nContexto:\n${contextLines}`;
 
     const location = process.env.VERTEX_LOCATION || "us-central1";
 
@@ -38,7 +69,8 @@ server.post("/ask", checkOrigin, rateLimit, async (req: Request, res: Response) 
     const system = systemPrompt;
     const user = [
       `Pregunta: ${query}`,
-      extractiveAnswer ? `Extractive hint: ${extractiveAnswer}` : "",
+      // Solo pasa extractiveAnswer si hay referencias internas
+      (references.length > 0 && extractiveAnswer) ? `Extractive hint: ${extractiveAnswer}` : "",
       references.length
         ? `Fuentes:\n${references
           .slice(0, 6)
@@ -55,9 +87,11 @@ server.post("/ask", checkOrigin, rateLimit, async (req: Request, res: Response) 
 
     const text = result.response?.candidates?.[0]?.content?.parts?.map(p => p.text).join("") || "(sin texto)";
 
+    // Si el modelo generó texto útil, no mostrar mensaje de "No logro encontrar información..."
+    const hasUsefulText = text && text.trim() && text.trim() !== "No logro encontrar información, ¿podrías explicarme más detalladamente?";
     res.json({
       text,
-      references: passages.map(p => ({ title: p.title, url: p.url, source: p.source, score: p.score }))
+      references: hasUsefulText ? passages.map(p => ({ title: p.title, url: p.url, source: p.source, score: p.score })) : []
     });
   } catch (err: any) {
     console.error(err);

@@ -2,7 +2,8 @@ import express from "express";
 import cors from "cors";
 import { VertexAI } from "@google-cloud/vertexai";
 import { retrieveHybrid } from "./rag.js";
-import { searchAll } from "./search";
+import { searchAll } from "./search.js";
+import { systemPrompt } from "./prompts.js";
 import { checkOrigin, rateLimit } from "./security.js";
 const server = express(); // <- usa un nombre distinto a 'app' para evitar colisión
 server.use(express.json({ limit: "1mb" }));
@@ -15,6 +16,27 @@ server.post("/ask", checkOrigin, rateLimit, async (req, res) => {
         const query = (req.body?.query || "").trim();
         if (!query || query.length < 3)
             return res.status(400).json({ error: "Pregunta inválida" });
+        // Validación de dominio permitido
+        const allowedDomains = [
+            "vertex ai",
+            "construcción de agentes",
+            "construccion de agentes",
+            "agentes",
+            "agent",
+            "publicis sapient",
+            "publicis sapient latam",
+            "ps latam",
+            "pslatam",
+            "ai caravan 2025"
+        ];
+        const qLower = query.toLowerCase();
+        const isAllowed = allowedDomains.some(term => qLower.includes(term));
+        if (!isAllowed) {
+            return res.json({
+                text: "Lo siento, solo puedo responder preguntas sobre Vertex AI, construcción de agentes, Publicis Sapient y Publicis Sapient Latam.",
+                references: []
+            });
+        }
         const { references, extractiveAnswer } = await searchAll(query);
         const passages = await retrieveHybrid(query, 3, 3);
         const contextLines = passages.map(p => `- ${p.snippet} [${p.title}${p.url ? " | " + p.url : ""}]`).join("\n");
@@ -23,10 +45,11 @@ server.post("/ask", checkOrigin, rateLimit, async (req, res) => {
         const location = process.env.VERTEX_LOCATION || "us-central1";
         const vertex = new VertexAI({ project, location });
         const model = vertex.getGenerativeModel({ model: process.env.VERTEX_MODEL || "gemini-1.5-flash" });
-        const system = `Responde en Markdown. No inventes. No incluyas "Referencias" en el texto.`;
+        const system = systemPrompt;
         const user = [
             `Pregunta: ${query}`,
-            extractiveAnswer ? `Extractive hint: ${extractiveAnswer}` : "",
+            // Solo pasa extractiveAnswer si hay referencias internas
+            (references.length > 0 && extractiveAnswer) ? `Extractive hint: ${extractiveAnswer}` : "",
             references.length
                 ? `Fuentes:\n${references
                     .slice(0, 6)

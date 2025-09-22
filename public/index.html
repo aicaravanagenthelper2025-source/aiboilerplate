@@ -188,16 +188,7 @@
           const html = DOMPurify.sanitize(marked.parse(cleaned));
           outEl.innerHTML = html;
 
-          // Referencias únicas
-          const uniq = dedupeRefs(json.references || []);
-          if (uniq.length) {
-            const items = uniq.map(r =>
-              r.url
-                ? `<li><a href="${r.url}" target="_blank" rel="noopener">${r.title || r.url}</a></li>`
-                : `<li>${r.title || "Referencia"}</li>`
-            ).join("");
-            refsEl.innerHTML = `<strong>Referencias</strong><ul>${items}</ul>`;
-          }
+          
         } catch (e) {
           outEl.textContent = "Error: " + (e.message || e);
         } finally {
